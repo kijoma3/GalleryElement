@@ -25,6 +25,8 @@ class Gallery extends HTMLElement {
 
     constructor(galleryContainer, ...args) {
         super();
+
+
         this.attachShadow({ mode: 'open' });
         this.imgs = [];
         document.addEventListener('DOMContentLoaded', () => {
@@ -56,7 +58,6 @@ class Gallery extends HTMLElement {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                border: 1px solid purple;
             }
             
             #gallery{
@@ -65,8 +66,7 @@ class Gallery extends HTMLElement {
                 justify-content: center;
                 align-items: center;
                 width: 100%;
-                height: 50vh;
-                border: 1px solid purple;
+                height: 100%;
                 overflow: hidden;
                 background-color: rgba(128, 128, 128, 0.379);
             }
@@ -194,150 +194,163 @@ class Gallery extends HTMLElement {
     connectedCallback() {
         document.addEventListener('DOMContentLoaded', () => {
 
-            if (this.hasAttribute('imgs')) {
-                let bilder = this.getAttribute('imgs').replace(/ /g, '').split(',');
-                console.log(bilder);
-
-                for (let element of bilder) {
-                    let bild = document.createElement('img');
-                    bild.setAttribute('src', element);
-                    bild.className = 'galImg';
-                    this.imgs.push(bild);
-
-                    this.galContainer.appendChild(bild);
-
-                }
-
-                /* console.log('imgs', this.imgs); */
-            }
+            const prom = () => {
+                const promise = new Promise((res, rej) => {
 
 
 
-            this.imgLength = this.imgs.length;
-            this.imgCount = this.imgs.length;
-            this.imgNum = this.imgCount % this.imgLength;
-            this.img = this.imgs[this.imgNum];
+                    if (this.hasAttribute('imgs')) {
+                        let bilder = this.getAttribute('imgs').replace(/ /g, '').split(',');
+                        console.log(bilder);
 
-            console.log("testA");
-            this.checkSize(this.img);
-            // Mur der else-block muss da sein. this.gallery kann durch neu erstellten container ersetzt werden.
+                        for (let element of bilder) {
+                            let bild = document.createElement('img');
+                            bild.setAttribute('src', element);
+                            bild.className = 'galImg';
+                            bild.setAttribute('height', '100%');
+                            bild.setAttribute('width', 'auto');
+                            this.imgs.push(bild);
 
-            this.gallery = this.galContainer;
-            this.gallery.appendChild(this.galNext);
-            this.gallery.appendChild(this.galPrev);
+                            this.galContainer.appendChild(bild);
 
+                        }
 
-            this.inAnimation = false;
-
-
-            setInterval(() => {
-                if (this.autoScroll) {
-                    if (!this.inAnimation) {
-                        this.next();
+                        /* console.log('imgs', this.imgs); */
                     }
-                }
-            }, this.autoScrollInterval)
 
 
 
-            //Hier muss next und prev erzeugt werden.
-            const next = this.galNext;
-            const prev = this.galPrev;
+                    this.imgLength = this.imgs.length;
+                    this.imgCount = this.imgs.length;
+                    this.imgNum = this.imgCount % this.imgLength;
+                    this.img = this.imgs[this.imgNum];
 
-          
+                    console.log("testA");
+                    
+                    // Mur der else-block muss da sein. this.gallery kann durch neu erstellten container ersetzt werden.
 
-            setTimeout(()=>{
-            this.checkSize(this.img);
-            }, 5);
+                    this.gallery = this.galContainer;
+                    this.gallery.appendChild(this.galNext);
+                    this.gallery.appendChild(this.galPrev);
 
-            window.addEventListener('d', () => {
+
+                    this.inAnimation = false;
+
+
+                    setInterval(() => {
+                        if (this.autoScroll) {
+                            if (!this.inAnimation) {
+                                this.next();
+                            }
+                        }
+                    }, this.autoScrollInterval)
+
+
+
+                    //Hier muss next und prev erzeugt werden.
+                    const next = this.galNext;
+                    const prev = this.galPrev;
+
+
+
+                   
+
+                    
+
+                    window.addEventListener('resize', () => {
+                        this.checkSize(this.img);
+                    });
+                    this.animationDuration = 1;
+
+                    this.imgs.forEach(element => {
+                        element.style.animationDuration = `${this.animationDuration}s`;
+                    });
+
+                    for (let i = 0; i < this.imgLength; i++) {
+                        if (i != this.imgNum) {
+                            this.imgs[i].classList.add("hide");
+                        }
+                    }
+
+
+
+
+
+                    this.next = () => {
+                        if (!this.inAnimation) {
+                            this.img.classList.remove("slideIn");
+                            this.img.classList.remove("slideInL");
+                            this.img.style.setProperty('--galWidthAnim', `-${this.gallery.offsetWidth}px`);
+
+
+                            this.img.classList.add("slideOut");
+                            ++this.imgCount
+                            this.changeImg("right");
+
+                        }
+                    }
+
+                    setTimeout(()=>{
+                    this.checkSize(this.img);
+                    }, 1000
+                );
+
+                    next.addEventListener("click", () => {
+                        this.autoScroll = false;
+                        this.next();
+                    });
+
+
+                    prev.addEventListener("click", () => {
+                        this.autoScroll = false;
+                        this.prev();
+                    });
+
+                    this.prev = () => {
+
+                        if (!this.inAnimation) {
+                            this.img.classList.remove("slideInL");
+                            this.img.classList.remove("slideIn");
+                            this.img.style.setProperty('--galWidthAnim', `${this.gallery.offsetWidth}px`);
+                            console.log(this.gallery.offsetWidth);
+                            this.img.classList.add("slideOutL");
+                            this.imgCount = this.imgCount == 0 ? (this.imgLength - 1) : --this.imgCount;
+
+                            this.changeImg("left");
+                        }
+
+                    }
+                    res();
+                });
+                return promise;
+            }
+            prom().then(() => {
+                console.log('then', this.img);
                 this.checkSize(this.img);
+                this.changeImg();
             });
-
-            window.addEventListener('resize', () => {
-                this.checkSize(this.img);
-            });
-            this.animationDuration = 1;
-
-            this.imgs.forEach(element => {
-                element.style.animationDuration = `${this.animationDuration}s`;
-            });
-
-            for (let i = 0; i < this.imgLength; i++) {
-                if (i != this.imgNum) {
-                    this.imgs[i].classList.add("hide");
-                }
-            }
-
-
-
-
-
-            this.next = () => {
-                if (!this.inAnimation) {
-                    this.img.classList.remove("slideIn");
-                    this.img.classList.remove("slideInL");
-                    this.img.style.setProperty('--galWidthAnim', `-${this.gallery.offsetWidth}px`);
-
-
-                    this.img.classList.add("slideOut");
-                    ++this.imgCount
-                    this.changeImg("right");
-
-                }
-            }
-
-
-
-            next.addEventListener("click", () => {
-                this.autoScroll = false;
-                this.next();
-            });
-
-
-            prev.addEventListener("click", () => {
-                this.autoScroll = false;
-                this.prev();
-            });
-
-            this.prev = () => {
-
-                if (!this.inAnimation) {
-                    this.img.classList.remove("slideInL");
-                    this.img.classList.remove("slideIn");
-                    this.img.style.setProperty('--galWidthAnim', `${this.gallery.offsetWidth}px`);
-                    console.log(this.gallery.offsetWidth);
-                    this.img.classList.add("slideOutL");
-                    this.imgCount = this.imgCount == 0 ? (this.imgLength - 1) : --this.imgCount;
-
-                    this.changeImg("left");
-                }
-
-            }
-
+            /* this.checkSize(this.img); */
             
-
-        });
-        document.addEventListener('', () => {
-            this.checkSize(this.img);
-            this.changeImg();
         });
 
         
-        
-        
+
+
+
+
+
 
     }
 
-   
+
 
     checkSize(img) {
-            /* console.log('imgs', this.imgs);
-            console.log('imgLength', this.imgLength);
-            console.log('imgCount', this.imgCount);
-            console.log('img', this.img);
-            console.log('imgH', this.img.width);
-            console.log('imgW', this.img.height); */
+        /* console.log('imgs', this.imgs);
+        console.log('imgLength', this.imgLength);
+        console.log('imgCount', this.imgCount);
+        console.log('img', this.img);
+        console.log('imgH', this.img.width);
+        console.log('imgW', this.img.height); */
 
         console.log('testB', img);
         if (img.height > img.width) {
@@ -376,6 +389,8 @@ class Gallery extends HTMLElement {
             }
         });
     }
+
+    
 
     changeImg(direction) {
 
